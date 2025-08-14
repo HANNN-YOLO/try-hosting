@@ -22,6 +22,22 @@
     <!-- List data -->
     <div id="dataList"></div>
   </div>
+
+  <!-- Modal Edit -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Edit Data</h2>
+      <form id="editForm">
+        <input type="hidden" id="editId">
+        <input type="text" id="editNama" placeholder="Nama" required>
+        <input type="number" id="editUmur" placeholder="Umur" required>
+        <input type="file" id="editGambar" accept="image/*">
+        <div id="currentImage"></div>
+        <button type="submit">Update</button>
+      </form>
+    </div>
+  </div>
   
   <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> -->
   <script src="app.js"></script>

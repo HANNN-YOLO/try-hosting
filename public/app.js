@@ -9,6 +9,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const dataList = document.getElementById("dataList");
 const addForm = document.getElementById("addForm");
+const editModal = document.getElementById("editModal");
+const editForm = document.getElementById("editForm");
+const closeBtn = document.querySelector(".close");
+
+// Modal handling
+closeBtn.onclick = function() {
+  editModal.style.display = "none";
+}
+
+window.onclick = function(event) {
+  if (event.target == editModal) {
+    editModal.style.display = "none";
+  }
+}
 
 // Create data
 addForm.addEventListener("submit", async (e) => {
@@ -62,6 +76,89 @@ addForm.addEventListener("submit", async (e) => {
   loadData();
   });
 
+// Edit form submission
+editForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const id = document.getElementById("editId").value;
+  const nama = document.getElementById("editNama").value;
+  const umur = parseInt(document.getElementById("editUmur").value);
+  const file = document.getElementById("editGambar").files[0];
+  
+  let gambar_profile = document.getElementById("editNama").getAttribute("data-current-image");
+
+  // Jika ada file baru, upload ke storage
+  if (file) {
+    const filePath = `${Date.now()}_${file.name}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from(BUCKET)
+      .upload(filePath, file);
+
+    if (uploadError) {
+      alert("Upload gambar baru gagal!");
+      console.error(uploadError);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(filePath);
+    
+    gambar_profile = publicUrlData.publicUrl;
+  }
+
+  try {
+    const res = await fetch(`/api/update/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nama,
+        umur,
+        gambar_profile,
+        created_at: new Date().toISOString()
+      })
+    });
+
+    if (res.ok) {
+      alert("Data berhasil diupdate!");
+      editModal.style.display = "none";
+      editForm.reset();
+      loadData();
+    } else {
+      const errorText = await res.text();
+      alert(`Gagal update data: ${errorText}`);
+    }
+  } catch (error) {
+    alert(`Error: ${error.message}`);
+  }
+});
+
+// Function untuk membuka modal edit
+async function openEditModal(id) {
+  try {
+    const res = await fetch(`/api/update/${id}`);
+    if (res.ok) {
+      const data = await res.json();
+      
+      document.getElementById("editId").value = data.id;
+      document.getElementById("editNama").value = data.nama;
+      document.getElementById("editNama").setAttribute("data-current-image", data.gambar_profile);
+      document.getElementById("editUmur").value = data.umur;
+      
+      // Tampilkan gambar saat ini
+      const currentImageDiv = document.getElementById("currentImage");
+      currentImageDiv.innerHTML = `<img src="${data.gambar_profile}" alt="Current Image">`;
+      
+      editModal.style.display = "block";
+    } else {
+      alert("Gagal mengambil data untuk edit");
+    }
+  } catch (error) {
+    alert(`Error: ${error.message}`);
+  }
+}
+
 // Read data realtime
 async function loadData() {
   // versi lama
@@ -84,7 +181,10 @@ function renderData(rows) {
     div.innerHTML = `
       <img src="${row.gambar_profile}" alt="">
       <div>${row.nama} (${row.umur} th)</div>
-      <button onclick="deleteData(${row.id})">Hapus</button>
+      <div>
+        <button class="edit-btn" onclick="openEditModal(${row.id})">Edit</button>
+        <button class="delete-btn" onclick="deleteData(${row.id})">Hapus</button>
+      </div>
     `;
     dataList.appendChild(div);
   });
