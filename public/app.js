@@ -5,7 +5,7 @@ const BUCKET = "test_crud_test1";
 
 // Supabase client untuk upload file
 const { createClient } = window.supabase;
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const dataList = document.getElementById("dataList");
 const addForm = document.getElementById("addForm");
